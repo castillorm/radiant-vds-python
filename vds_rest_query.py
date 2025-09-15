@@ -3,30 +3,23 @@ from requests.auth import HTTPBasicAuth
 import json
 
 # ===== CONFIGURATION =====
-VDS_HOST = "http://localhost:8080"   # Change to your VDS host/port
-BASE_DN = "dc=example,dc=com"        # Base DN for the query
-LDAP_FILTER = "(uid=*)"              # Your LDAP query filter
-USER = "cn=admin"                    # VDS username
-PASSWORD = "password"                # VDS password
+VDS_HOST = "http://10.0.0.1:8090"         # VDS host + port (use http:// or https://)
+BASE_DN = "o=companydirectory"            # Base DN for the search
+LDAP_FILTER = "(uid=*)"                   # LDAP filter
+USER_DN = "cn=admin,dc=example,dc=com"    # VDS bind DN
+PASSWORD = "password"                     # VDS password
 
 # ===== FUNCTION TO QUERY VDS =====
 def query_vds_rest(base_dn, ldap_filter):
-    url = f"{VDS_HOST}/rest/search"
-
-    payload = {
-        "dn": base_dn,
-        "scope": "sub",   # can be "base", "one", or "sub"
-        "filter": ldap_filter,
-        "attributes": ["*"]   # return all attributes
-    }
+    # Build the URL with filter as a query param
+    url = f"{VDS_HOST}/adap/{base_dn}?contextFilter={ldap_filter}"
 
     try:
-        response = requests.post(
+        response = requests.get(
             url,
-            auth=HTTPBasicAuth(USER, PASSWORD),
-            headers={"Content-Type": "application/json"},
-            data=json.dumps(payload),
-            verify=False   # disable SSL verification if using self-signed certs
+            auth=HTTPBasicAuth(USER_DN, PASSWORD),  # Basic Auth
+            headers={"Accept": "application/json"}, # Request JSON format
+            verify=False   # Disable SSL verification if using self-signed certs
         )
 
         if response.status_code == 200:
